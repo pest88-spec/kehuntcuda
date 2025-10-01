@@ -9,7 +9,8 @@ class GpuCapabilityTest(unittest.TestCase):
         repo_root = subprocess.check_output(
             ["git", "rev-parse", "--show-toplevel"], text=True
         ).strip()
-        project_root = os.path.join(repo_root, "keyhuntcuda", "KeyHunt-Cuda")
+        # New repo structure: working directory IS the repo root
+        project_root = repo_root
 
         result = subprocess.run(
             [os.path.join(project_root, "tools", "gpu_capability.sh")],

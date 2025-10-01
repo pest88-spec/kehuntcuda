@@ -13,7 +13,7 @@ env:
 jobs:
   lint-and-tests:
     name: Lint, provenance, unit tests
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, cuda, gpu, linux]
     strategy:
       matrix:
         python-version: ["3.12"]
@@ -70,7 +70,7 @@ jobs:
   gpu-validation:
     name: GPU smoke & performance regression
     needs: lint-and-tests
-    runs-on: [self-hosted, gpu, linux]
+    runs-on: [self-hosted, cuda, gpu, linux]
     env:
       ENABLE_PERF_SMOKE: "1"
       PERF_NUM_KEYS: "250000"
