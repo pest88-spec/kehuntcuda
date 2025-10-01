@@ -33,34 +33,12 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install and verify GMP library
+      - name: Verify GMP library
         run: |
-          # Try apt-get first
-          apt-get update 2>&1 | head -5 || true
-          apt-get install -y libgmp-dev 2>&1 | grep -E "(installed|unpacked|Setting up)" || echo "apt-get may have failed"
-
-          # Check if gmp.h exists
-          echo "=== Searching for gmp.h ==="
-          find /usr -name "gmp.h" 2>/dev/null || echo "No gmp.h found"
-
-          # Check dpkg
-          dpkg -l | grep -i gmp || echo "No GMP in dpkg"
-
-          # If not found, install from source
-          if [ ! -f /usr/include/gmp.h ] && [ ! -f /usr/local/include/gmp.h ]; then
-            echo "=== Installing GMP from source ==="
-            cd /tmp
-            wget -q https://gmplib.org/download/gmp/gmp-6.3.0.tar.xz || curl -sL https://gmplib.org/download/gmp/gmp-6.3.0.tar.xz -o gmp-6.3.0.tar.xz
-            tar -xf gmp-6.3.0.tar.xz
-            cd gmp-6.3.0
-            ./configure --prefix=/usr/local --enable-cxx
-            make -j$(nproc)
-            make install
-            ldconfig || true
-          fi
-
-          # Final check
-          ls -la /usr/include/gmp.h /usr/local/include/gmp.h 2>/dev/null || echo "ERROR: gmp.h not found!"
+          echo "=== Checking for GMP library (pre-installed in container) ==="
+          dpkg -l | grep libgmp || echo "GMP packages:"
+          ls -la /usr/include/gmp.h || echo "ERROR: gmp.h not found at /usr/include/gmp.h"
+          ls -la /usr/lib/x86_64-linux-gnu/libgmp.* 2>/dev/null || ls -la /usr/lib/libgmp.* 2>/dev/null || echo "GMP libraries check"
 
       - name: Check build environment
         run: |
@@ -129,36 +107,12 @@ jobs:
       - name: Verify NVIDIA runtime
         run: nvidia-smi
 
-      - name: Install and verify GMP library
+      - name: Verify GMP library
         run: |
-          # Try apt-get first
-          apt-get update 2>&1 | head -5 || true
-          apt-get install -y libgmp-dev 2>&1 | grep -E "(installed|unpacked|Setting up)" || echo "apt-get may have failed"
-
-          # Check if gmp.h exists in common locations
-          echo "=== Searching for gmp.h ==="
-          find /usr -name "gmp.h" 2>/dev/null || echo "No gmp.h found via find"
-
-          # Check dpkg status
-          dpkg -l | grep -i gmp || echo "No GMP packages in dpkg"
-
-          # If still not found, try installing from source
-          if [ ! -f /usr/include/gmp.h ] && [ ! -f /usr/local/include/gmp.h ]; then
-            echo "=== GMP not found, installing from source ==="
-            cd /tmp
-            wget -q https://gmplib.org/download/gmp/gmp-6.3.0.tar.xz || curl -sL https://gmplib.org/download/gmp/gmp-6.3.0.tar.xz -o gmp-6.3.0.tar.xz
-            tar -xf gmp-6.3.0.tar.xz
-            cd gmp-6.3.0
-            ./configure --prefix=/usr/local --enable-cxx
-            make -j$(nproc)
-            make install
-            ldconfig || true
-            echo "=== GMP installed from source ==="
-          fi
-
-          # Final verification
-          echo "=== Final GMP check ==="
-          ls -la /usr/include/gmp.h /usr/local/include/gmp.h 2>/dev/null || echo "ERROR: gmp.h still not found!"
+          echo "=== Checking for GMP library (pre-installed in container) ==="
+          dpkg -l | grep libgmp || echo "GMP packages:"
+          ls -la /usr/include/gmp.h || echo "ERROR: gmp.h not found at /usr/include/gmp.h"
+          ls -la /usr/lib/x86_64-linux-gnu/libgmp.* 2>/dev/null || ls -la /usr/lib/libgmp.* 2>/dev/null || echo "GMP libraries check"
 
       - name: Check CUDA and build environment
         run: |
