@@ -120,7 +120,13 @@ jobs:
         run: |
           export PATH=/usr/local/cuda/bin:$PATH
           export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
+          # Check available g++ version
+          which g++ && g++ --version
+          ls -la /usr/bin/g++* || true
+          # Clean and build
           make clean || true
+          # Override g++ version in Makefile for container environment
+          sed -i 's/g++-12/g++/g' Makefile || true
           make KeyHunt
 
       - name: Collect GPU performance metrics
