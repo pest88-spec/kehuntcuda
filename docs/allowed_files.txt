@@ -1,0 +1,21 @@
+# Allowed New Files List
+# Per AI-Agent规范 ZERO-NEW-FILES principle
+# All files must be pre-approved before creation
+
+# Stage 3 Test Files
+tests/validators/cpu_baseline_validator.cpp
+tests/stage3/test_scan_kernel_correctness.cu
+tests/stage3/test_scan_kernel_performance.cu
+tests/stage3/cpu_gpu_consistency_test.cpp
+tests/stage3/build_test.sh
+tests/stage3/cuda_compat.h
+tests/stage3/README.md
+tests/perf/stage3_baseline.json
+
+# Stage 3 Documentation
+docs/stage3_implementation_plan.md
+docs/stage3_kernel_audit.md
+docs/stage3_phase6_completion_summary.md
+docs/stage3_phase6_final_report.md
+docs/stage3_test_results.md
+docs/STAGE3_STATUS.md

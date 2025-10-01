@@ -204,3 +204,9 @@ venv/
 docs/stage3_phase*.md
 docs/source_fusion_*.md
 docs/STAGE3_STATUS.md
+!docs/stage3_implementation_plan.md
+!docs/stage3_kernel_audit.md
+!docs/stage3_phase6_completion_summary.md
+!docs/stage3_phase6_final_report.md
+!docs/stage3_test_results.md
+!docs/STAGE3_STATUS.md
