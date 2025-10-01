@@ -37,6 +37,9 @@ jobs:
         run: |
           apt-get update || true
           apt-get install -y libgmp-dev || echo "GMP install failed, trying alternative"
+          # Verify GMP headers are available
+          ls -la /usr/include/gmp.h || echo "WARNING: gmp.h not found in /usr/include"
+          dpkg -L libgmp-dev 2>/dev/null || echo "libgmp-dev package not installed"
 
       - name: Check build environment
         run: |
@@ -109,6 +112,9 @@ jobs:
         run: |
           apt-get update || true
           apt-get install -y libgmp-dev || echo "GMP install failed"
+          # Verify GMP headers are available
+          ls -la /usr/include/gmp.h || echo "WARNING: gmp.h not found in /usr/include"
+          dpkg -L libgmp-dev 2>/dev/null || echo "libgmp-dev package not installed"
 
       - name: Check CUDA and build environment
         run: |
