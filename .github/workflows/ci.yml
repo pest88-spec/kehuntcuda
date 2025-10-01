@@ -30,8 +30,8 @@ jobs:
 
       - name: Install system dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential python3-dev libgmp-dev
+          apt-get update
+          apt-get install -y build-essential python3-dev libgmp-dev
 
       - name: Install Python tooling
         run: |
@@ -74,6 +74,9 @@ jobs:
     env:
       ENABLE_PERF_SMOKE: "1"
       PERF_NUM_KEYS: "250000"
+      CUDA_VISIBLE_DEVICES: "0"
+      NVIDIA_VISIBLE_DEVICES: "all"
+      NVIDIA_DRIVER_CAPABILITIES: "compute,utility"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -85,8 +88,8 @@ jobs:
 
       - name: Install build dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential python3-dev libgmp-dev
+          apt-get update
+          apt-get install -y build-essential python3-dev libgmp-dev nvidia-cuda-toolkit || true
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
