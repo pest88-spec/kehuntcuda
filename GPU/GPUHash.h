@@ -13,20 +13,152 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
-*/
+ */
 
 #ifndef GPUHASHH
 #define GPUHASHH
+
+#include <stdint.h>
+
+extern __device__ __constant__ uint32_t K[64];
+extern __device__ __constant__ uint32_t I[8];
+__device__ __forceinline__ uint32_t scan_rotr(uint32_t x, int n)
+{
+    return (x >> n) | (x << (32 - n));
+}
+
+__device__ __forceinline__ uint32_t scan_rotl(uint32_t x, int n)
+{
+    return (x << n) | (x >> (32 - n));
+}
+
+__device__ __forceinline__ void RIPEMD160Initialize(uint32_t s[5]);
+__device__ __forceinline__ void RIPEMD160Transform(uint32_t s[5], uint32_t* w);
+__device__ __forceinline__ void fix_ripemd160_byte_order(uint8_t* hash);
+
+__device__ __forceinline__ void scan_sha256_single_block(const uint8_t* data, int len, uint8_t digest[32])
+{
+    uint8_t block[64] = {0};
+    #pragma unroll
+    for (int i = 0; i < len; ++i) {
+        block[i] = data[i];
+    }
+    block[len] = 0x80u;
+    const uint64_t bitlen = static_cast<uint64_t>(len) * 8ull;
+    block[63] = static_cast<uint8_t>(bitlen);
+    block[62] = static_cast<uint8_t>(bitlen >> 8);
+    block[61] = static_cast<uint8_t>(bitlen >> 16);
+    block[60] = static_cast<uint8_t>(bitlen >> 24);
+    block[59] = static_cast<uint8_t>(bitlen >> 32);
+    block[58] = static_cast<uint8_t>(bitlen >> 40);
+    block[57] = static_cast<uint8_t>(bitlen >> 48);
+    block[56] = static_cast<uint8_t>(bitlen >> 56);
+
+    uint32_t w[64];
+    #pragma unroll
+    for (int i = 0; i < 16; ++i) {
+        const int base = i * 4;
+        w[i] = (static_cast<uint32_t>(block[base]) << 24) |
+               (static_cast<uint32_t>(block[base + 1]) << 16) |
+               (static_cast<uint32_t>(block[base + 2]) << 8) |
+               static_cast<uint32_t>(block[base + 3]);
+    }
+    #pragma unroll
+    for (int i = 16; i < 64; ++i) {
+        const uint32_t s0 = scan_rotr(w[i - 15], 7) ^ scan_rotr(w[i - 15], 18) ^ (w[i - 15] >> 3);
+        const uint32_t s1 = scan_rotr(w[i - 2], 17) ^ scan_rotr(w[i - 2], 19) ^ (w[i - 2] >> 10);
+        w[i] = w[i - 16] + s0 + w[i - 7] + s1;
+    }
+
+    uint32_t a = I[0];
+    uint32_t b = I[1];
+    uint32_t c = I[2];
+    uint32_t d = I[3];
+    uint32_t e = I[4];
+    uint32_t f = I[5];
+    uint32_t g = I[6];
+    uint32_t h = I[7];
+
+    #pragma unroll
+    for (int i = 0; i < 64; ++i) {
+        const uint32_t S1 = scan_rotr(e, 6) ^ scan_rotr(e, 11) ^ scan_rotr(e, 25);
+        const uint32_t ch = (e & f) ^ ((~e) & g);
+        const uint32_t temp1 = h + S1 + ch + K[i] + w[i];
+        const uint32_t S0 = scan_rotr(a, 2) ^ scan_rotr(a, 13) ^ scan_rotr(a, 22);
+        const uint32_t maj = (a & b) ^ (a & c) ^ (b & c);
+        const uint32_t temp2 = S0 + maj;
+
+        h = g;
+        g = f;
+        f = e;
+        e = d + temp1;
+        d = c;
+        c = b;
+        b = a;
+        a = temp1 + temp2;
+    }
+
+    const uint32_t state[8] = {
+        a + I[0],
+        b + I[1],
+        c + I[2],
+        d + I[3],
+        e + I[4],
+        f + I[5],
+        g + I[6],
+        h + I[7]
+    };
+
+    #pragma unroll
+    for (int i = 0; i < 8; ++i) {
+        const uint32_t word = state[i];
+        digest[i * 4 + 0] = static_cast<uint8_t>((word >> 24) & 0xFFu);
+        digest[i * 4 + 1] = static_cast<uint8_t>((word >> 16) & 0xFFu);
+        digest[i * 4 + 2] = static_cast<uint8_t>((word >> 8) & 0xFFu);
+        digest[i * 4 + 3] = static_cast<uint8_t>(word & 0xFFu);
+    }
+}
+
+__device__ __forceinline__ void scan_ripemd160_single_block(const uint8_t* data, int len, uint8_t digest[20])
+{
+    uint32_t block_words[16] = {0};
+    #pragma unroll
+    for (int i = 0; i < len; ++i) {
+        const int word = i >> 2;
+        const int offset = (i & 3) * 8;
+        block_words[word] |= static_cast<uint32_t>(data[i]) << offset;
+    }
+
+    const int word_index = len >> 2;
+    const int byte_offset = (len & 3) * 8;
+    block_words[word_index] |= static_cast<uint32_t>(0x80u) << byte_offset;
+
+    const uint64_t bitlen = static_cast<uint64_t>(len) * 8ull;
+    block_words[14] = static_cast<uint32_t>(bitlen & 0xFFFFFFFFu);
+    block_words[15] = static_cast<uint32_t>(bitlen >> 32);
+
+    uint32_t state[5];
+    RIPEMD160Initialize(state);
+    RIPEMD160Transform(state, block_words);
+
+    uint32_t* out_words = reinterpret_cast<uint32_t*>(digest);
+    #pragma unroll
+    for (int i = 0; i < 5; ++i) {
+        out_words[i] = state[i];
+    }
+
+    fix_ripemd160_byte_order(digest);
+}
 
 // ---------------------------------------------------------------------------------
 // SHA256
 // ---------------------------------------------------------------------------------
 
-// SHA256 K constants are defined in GPUGlobals.cu
-extern __device__ __constant__ uint32_t K[64];
-
-// SHA256 I constants are defined in GPUGlobals.cu
-extern __device__ __constant__ uint32_t I[8];
+// Forward declaration for serialization helper
+__device__ __forceinline__ void scan_serialize_compressed(
+    const uint64_t px[4],
+    const uint64_t py[4],
+    uint8_t pubkey[33]);
 
 // ---------------------------------------------------------------------------------
 // Common utility functions
@@ -910,8 +1042,13 @@ __device__ __forceinline__ void scan_hash160_compressed(
     const uint64_t py[4],
     uint8_t hash160[20])
 {
-    uint8_t y_parity = (uint8_t)(py[0] & 1);
-    _GetHash160Comp((uint64_t*)px, y_parity, hash160);
+    uint8_t pubkey[33];
+    scan_serialize_compressed(px, py, pubkey);
+
+    uint8_t sha_digest[32];
+    scan_sha256_single_block(pubkey, 33, sha_digest);
+
+    scan_ripemd160_single_block(sha_digest, 32, hash160);
 }
 
 /**
