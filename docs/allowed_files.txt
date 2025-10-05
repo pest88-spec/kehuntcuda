@@ -12,6 +12,9 @@ tests/stage3/cuda_compat.h
 tests/stage3/README.md
 tests/perf/stage3_baseline.json
 
+# Benchmark Infrastructure
+benchmark/bench_gpu.sh
+
 # Stage 3 Documentation
 docs/stage3_implementation_plan.md
 docs/stage3_kernel_audit.md
