@@ -1,5 +1,7 @@
 #!/bin/bash
 # SPDX-License-Identifier: GPL-3.0-or-later
+# @reuse_check Stage3 pipeline requires dedicated benchmark script; no reusable alternative located in repo or reference sources.
+# Source-Fusion: AI-Agent开发与运行防错方案.md §4.2 性能反退化监控 → benchmark/bench_gpu.sh 模板
 # @file benchmark/bench_gpu.sh
 # @origin AI-Agent开发与运行防错方案.md
 # @origin_path benchmark/bench_gpu.sh

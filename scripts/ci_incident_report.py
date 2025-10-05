@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# Source-Fusion Provenance: CI incident logging helper created for KeyHunt-CUDA (2024-09-29).
+# @reuse_check 原有 shell incident 脚本缺失，仅能在此 Python 文件上增量扩展。
+# Source-Fusion: CI incident logging helper created for KeyHunt-CUDA (2024-09-29).
 
 """Emit a lightweight incident report after failed CI runs，并可检测 CUDA 错误。"""
 

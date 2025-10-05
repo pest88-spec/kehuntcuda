@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# Source-Fusion Provenance: Original compliance script authored for KeyHunt-CUDA (2024-09-29).
+# @reuse_check 内部唯一的溯源扫描脚本，参考 2024-09-29 版本进行增强，无外部替代。
+# Source-Fusion: Original compliance script authored for KeyHunt-CUDA (2024-09-29).
 
 """Ensure modified source files retain provenance headers and关键标签。"""
 
