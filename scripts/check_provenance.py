@@ -1,13 +1,14 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Source-Fusion Provenance: Original compliance script authored for KeyHunt-CUDA (2024-09-29).
 
-"""Ensure modified source files retain provenance headers."""
+"""Ensure modified source files retain provenance headers and关键标签。"""
 
 from __future__ import annotations
 
 import os
 import subprocess
 import sys
+from argparse import ArgumentParser
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, List
@@ -71,21 +72,42 @@ def needs_check(entry: DiffEntry) -> bool:
     return ext in CHECK_EXTENSIONS
 
 
-def has_provenance_header(path: Path) -> bool:
+def _read_header_lines(path: Path) -> List[str]:
+    lines: List[str] = []
     try:
         with path.open("r", encoding="utf-8", errors="ignore") as fh:
             for _ in range(MAX_SCAN_LINES):
                 line = fh.readline()
                 if not line:
                     break
-                if any(keyword in line for keyword in HEADER_KEYWORDS):
-                    return True
+                lines.append(line)
     except FileNotFoundError:
-        return False
-    return False
+        return []
+    return lines
+
+
+def has_provenance_header(path: Path) -> bool:
+    lines = _read_header_lines(path)
+    return any(keyword in line for line in lines for keyword in HEADER_KEYWORDS)
+
+
+def ensure_required_tags(path: Path, tags: Iterable[str]) -> List[str]:
+    lines = _read_header_lines(path)
+    missing: List[str] = []
+    if not tags:
+        return missing
+    joined = "".join(lines)
+    for tag in tags:
+        if tag not in joined:
+            missing.append(tag)
+    return missing
 
 
 def main() -> int:
+    parser = ArgumentParser(description="Provenance header verifier")
+    parser.add_argument("--require-tag", action="append", default=[], help="强制要求头部包含的标签 (可重复)")
+    args = parser.parse_args()
+
     failures: List[str] = []
     for entry in _compute_diff():
         if not needs_check(entry):
@@ -95,6 +117,12 @@ def main() -> int:
             continue
         if not has_provenance_header(entry.path):
             failures.append(f"Missing provenance header: {entry.path}")
+            continue
+        missing_tags = ensure_required_tags(entry.path, args.require_tag)
+        if missing_tags:
+            failures.append(
+                f"Missing required tags {missing_tags} in {entry.path}"
+            )
 
     if failures:
         print("Provenance check failed:\n" + "\n".join(f"  - {msg}" for msg in failures), file=sys.stderr)
