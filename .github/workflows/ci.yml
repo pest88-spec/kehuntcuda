@@ -53,13 +53,21 @@ jobs:
           pip install pip-licenses PyYAML
 
       - name: Incremental diff guardrails
-        run: python scripts/check_incremental.py
+        run: |
+          python scripts/check_incremental.py \
+            --max-diff-lines 8000 \
+            --max-new-files 0 \
+            --check-placeholders
 
       - name: License compliance
         run: python scripts/check_licenses.py
 
       - name: Provenance enforcement
-        run: python scripts/check_provenance.py
+        run: |
+          python scripts/check_provenance.py \
+            --require-tag @reuse_check \
+            --require-tag Source-Fusion \
+            --require-tag SPDX
 
       - name: Python unit tests
         run: |
@@ -81,7 +89,11 @@ jobs:
 
       - name: Emit incident report on failure
         if: failure()
-        run: python scripts/ci_incident_report.py "lint-and-tests failure"
+        run: |
+          python scripts/ci_incident_report.py \
+            "lint-and-tests failure" \
+            --cuda-log build.log \
+            --fail-on-cuda-error
 
   gpu-validation:
     name: GPU smoke & performance regression
@@ -160,4 +172,9 @@ jobs:
 
       - name: Emit incident report on failure
         if: failure()
-        run: python scripts/ci_incident_report.py "gpu-validation failure"
+        run: |
+          python scripts/ci_incident_report.py \
+            "gpu-validation failure" \
+            --cuda-log build.log \
+            --cuda-log tests/stage3/build_consistency.log \
+            --fail-on-cuda-error
